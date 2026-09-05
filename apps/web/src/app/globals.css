@@ -30,6 +30,24 @@ model-viewer {
   --poster-color: transparent;
 }
 
+/* Fallback 2D / acessibilidade: contraste e foco claros */
+:focus-visible {
+  outline: 2px solid #b33a1b;
+  outline-offset: 2px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 .nutrition-hotspot {
   display: block;
   max-width: 140px;
