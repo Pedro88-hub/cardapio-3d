@@ -45,6 +45,12 @@ export class MenuItemsService {
       basePrice: Number(item.basePrice),
       imageUrl: item.imageUrl,
       has3d: Boolean(item.asset),
+      nutritionTags: (item.nutritionTags as {
+        id: string;
+        label: string;
+        position: string;
+        normal: string;
+      }[] | null) ?? [],
       restaurant: item.category.restaurant,
       category: { id: item.category.id, name: item.category.name },
       asset: item.asset

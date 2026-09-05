@@ -10,6 +10,10 @@ const DESSERT_GLB = '/models/dessert.glb';
 const DESSERT_USDZ = '/models/dessert.usdz';
 
 async function main() {
+  await prisma.payment.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.tableCartLine.deleteMany();
+  await prisma.tableSession.deleteMany();
   await prisma.modifierOption.deleteMany();
   await prisma.modifierGroup.deleteMany();
   await prisma.menuItemAsset.deleteMany();
@@ -40,6 +44,26 @@ async function main() {
                   imageUrl:
                     'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80',
                   sortOrder: 0,
+                  nutritionTags: [
+                    {
+                      id: 'kcal',
+                      label: '520 kcal',
+                      position: '0m 0.14m 0.06m',
+                      normal: '0m 1m 0m',
+                    },
+                    {
+                      id: 'prot',
+                      label: 'Proteína 32g',
+                      position: '0.08m 0.08m 0.04m',
+                      normal: '1m 0m 0m',
+                    },
+                    {
+                      id: 'gord',
+                      label: 'Gordura 28g',
+                      position: '-0.08m 0.08m 0.04m',
+                      normal: '-1m 0m 0m',
+                    },
+                  ],
                   asset: {
                     create: {
                       glbUrl: BURGER_GLB,
@@ -146,6 +170,20 @@ async function main() {
                   imageUrl:
                     'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800&q=80',
                   sortOrder: 0,
+                  nutritionTags: [
+                    {
+                      id: 'kcal',
+                      label: '180 kcal',
+                      position: '0m 0.16m 0.04m',
+                      normal: '0m 1m 0m',
+                    },
+                    {
+                      id: 'alc',
+                      label: 'Álcool 14%',
+                      position: '0.06m 0.1m 0.04m',
+                      normal: '1m 0m 0m',
+                    },
+                  ],
                   asset: {
                     create: {
                       glbUrl: DRINK_GLB,

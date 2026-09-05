@@ -65,7 +65,7 @@ export function ItemDetailView({
     });
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const modifiers = item.modifiers.flatMap((g) =>
       g.options
         .filter((o) => selected[o.id])
@@ -75,7 +75,7 @@ export function ItemDetailView({
           priceDelta: o.priceDelta,
         })),
     );
-    addLine({
+    await addLine({
       itemId: item.id,
       name: item.name,
       unitPrice,

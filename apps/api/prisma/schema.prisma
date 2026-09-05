@@ -16,6 +16,7 @@ model Restaurant {
   watermark   String?
   primaryColor String    @default("#C45C26")
   categories  Category[]
+  tableSessions TableSession[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
@@ -42,8 +43,11 @@ model MenuItem {
   stock       Int              @default(100)
   available   Boolean          @default(true)
   sortOrder   Int              @default(0)
+  /// Tags do Raio-X nutricional (hotspots 3D)
+  nutritionTags Json?
   asset       MenuItemAsset?
   modifiers   ModifierGroup[]
+  cartLines   TableCartLine[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
@@ -90,4 +94,104 @@ model ModifierOption {
   sortOrder     Int           @default(0)
 
   @@index([groupId])
+}
+
+enum TableSessionStatus {
+  open
+  ordered
+  closed
+}
+
+enum OrderStatus {
+  pending_kitchen
+  preparing
+  served
+  cancelled
+}
+
+enum PaymentMethod {
+  pix
+  apple_pay
+  google_pay
+  card
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+}
+
+enum SplitMode {
+  none
+  by_person
+  by_item
+}
+
+/// Sessão da mesa — carrinho compartilhado entre quem leu o mesmo QR
+model TableSession {
+  id           String             @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  tableNumber  String
+  status       TableSessionStatus @default(open)
+  splitMode    SplitMode          @default(none)
+  guestCount   Int                @default(1)
+  lines        TableCartLine[]
+  orders       Order[]
+  payments     Payment[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([restaurantId, tableNumber])
+  @@index([restaurantId, tableNumber, status])
+}
+
+model TableCartLine {
+  id         String       @id @default(cuid())
+  sessionId  String
+  session    TableSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  menuItemId String?
+  menuItem   MenuItem?    @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+  guestId    String
+  guestName  String       @default("Convidado")
+  name       String
+  unitPrice  Decimal      @db.Decimal(10, 2)
+  quantity   Int          @default(1)
+  imageUrl   String?
+  modifiers  Json?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([sessionId])
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  sessionId   String
+  session     TableSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  status      OrderStatus @default(pending_kitchen)
+  /// Snapshot dos itens enviados à cozinha (PDV futuro)
+  payload     Json
+  note        String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([sessionId])
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  sessionId String
+  session   TableSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  method    PaymentMethod
+  status    PaymentStatus @default(pending)
+  amount    Decimal       @db.Decimal(10, 2)
+  /// Ex.: payload Pix (qr/copia-cola) ou id Payment Request
+  meta      Json?
+  guestId   String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([sessionId])
 }

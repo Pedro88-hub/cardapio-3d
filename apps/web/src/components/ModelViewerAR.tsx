@@ -62,8 +62,44 @@ function applyMeshVisibility(
     if (!opt.meshNodeName) continue;
     const node = findNode(scene, opt.meshNodeName);
     if (!node || typeof node.visible !== 'boolean') continue;
-    node.visible = Boolean(selected[opt.id]);
+    const on = Boolean(selected[opt.id]);
+    // show: nó aparece quando opção ligada; hide: option=ligado mantém no prato (visível)
+    // Em ambos os casos do seed, "ligado" = ingrediente presente
+    if (opt.action === 'hide') {
+      node.visible = on;
+    } else {
+      node.visible = on;
+    }
   }
+}
+
+async function captureWithWatermark(
+  viewer: ModelViewerElement,
+  watermark: string,
+) {
+  const canvas = viewer.shadowRoot?.querySelector('canvas');
+  if (!canvas) throw new Error('Canvas 3D não encontrado');
+
+  const out = document.createElement('canvas');
+  out.width = canvas.width;
+  out.height = canvas.height;
+  const ctx = out.getContext('2d');
+  if (!ctx) throw new Error('Canvas 2D indisponível');
+
+  ctx.drawImage(canvas, 0, 0);
+  const pad = Math.max(16, Math.round(out.width * 0.03));
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.fillRect(0, out.height - pad * 3.2, out.width, pad * 3.2);
+  ctx.fillStyle = '#fff';
+  ctx.font = `600 ${Math.max(18, Math.round(out.width * 0.035))}px Georgia, serif`;
+  ctx.fillText(watermark, pad, out.height - pad * 1.4);
+
+  return new Promise<Blob>((resolve, reject) => {
+    out.toBlob((blob) => {
+      if (!blob) reject(new Error('Falha ao gerar foto'));
+      else resolve(blob);
+    }, 'image/jpeg', 0.92);
+  });
 }
 
 export function ModelViewerAR({
@@ -81,6 +117,8 @@ export function ModelViewerAR({
   const [arAvailable, setArAvailable] = useState<boolean | null>(null);
   const [arError, setArError] = useState<string | null>(null);
   const [showHint, setShowHint] = useState(true);
+  const [xrayOn, setXrayOn] = useState(false);
+  const [photoMsg, setPhotoMsg] = useState<string | null>(null);
 
   const asset = item.asset;
   const allOptions = useMemo(
@@ -221,6 +259,29 @@ export function ModelViewerAR({
     }
   };
 
+  const takePhoto = async () => {
+    const el = ref.current;
+    if (!el || !ready) return;
+    try {
+      setPhotoMsg(null);
+      const blob = await captureWithWatermark(
+        el,
+        item.restaurant.watermark || item.restaurant.name,
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${item.name.replace(/\s+/g, '-').toLowerCase()}-casa-brasa.jpg`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setPhotoMsg('Foto salva com marca d’água do restaurante.');
+    } catch (e) {
+      setPhotoMsg(
+        e instanceof Error ? e.message : 'Não foi possível capturar a foto.',
+      );
+    }
+  };
+
   if (!asset) {
     return (
       <div className="flex aspect-[4/3] items-center justify-center rounded-2xl bg-black/5 text-sm text-[var(--muted)]">
@@ -242,13 +303,26 @@ export function ModelViewerAR({
               ['--poster-color' as string]: 'transparent',
             }}
           >
-            {/* Esconde o botão nativo — usamos um CTA único abaixo */}
             <button
               slot="ar-button"
               type="button"
               style={{ display: 'none' }}
               aria-hidden
             />
+            {xrayOn
+              ? (item.nutritionTags ?? []).map((tag) => (
+                  <button
+                    key={tag.id}
+                    slot={`hotspot-${tag.id}`}
+                    type="button"
+                    className="nutrition-hotspot"
+                    data-position={tag.position}
+                    data-normal={tag.normal}
+                  >
+                    {tag.label}
+                  </button>
+                ))
+              : null}
           </model-viewer>
         ) : (
           <div className="flex h-[380px] items-center justify-center text-sm text-white/60">
@@ -280,6 +354,31 @@ export function ModelViewerAR({
       >
         {ready ? 'Ver na minha mesa' : 'Preparando modelo 3D…'}
       </button>
+
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          disabled={!ready || (item.nutritionTags?.length ?? 0) === 0}
+          onClick={() => setXrayOn((v) => !v)}
+          className={`rounded-xl border px-3 py-2.5 text-sm font-medium disabled:opacity-40 ${
+            xrayOn ? 'border-transparent text-white' : 'border-[var(--border)] bg-white/60'
+          }`}
+          style={xrayOn ? { backgroundColor: accent } : undefined}
+        >
+          {xrayOn ? 'Raio-X ligado' : 'Raio-X nutricional'}
+        </button>
+        <button
+          type="button"
+          disabled={!ready}
+          onClick={takePhoto}
+          className="rounded-xl border border-[var(--border)] bg-white/60 px-3 py-2.5 text-sm font-medium disabled:opacity-40"
+        >
+          Fotografar
+        </button>
+      </div>
+      {photoMsg ? (
+        <p className="text-center text-xs text-[var(--muted)]">{photoMsg}</p>
+      ) : null}
 
       {showHint ? (
         <div className="rounded-xl border border-[var(--border)] bg-white/60 px-4 py-3 text-sm text-[var(--muted)]">
