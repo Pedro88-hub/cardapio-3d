@@ -190,40 +190,39 @@ export class AdminService {
 
   photogrammetryGuide() {
     return {
-      title: 'Pipeline de captura 3D do prato',
+      title: 'Como gerar o 3D do prato',
       steps: [
         {
           id: 'setup',
-          title: 'Setup físico (opcional)',
-          body: 'Use lightbox portátil e prato giratório com luz difusa para texturas sem sombra dura.',
+          title: 'Deixe a luz boa',
+          body: 'Se puder, use uma caixinha de luz ou um lugar claro sem sombra forte. Um prato giratório ajuda, mas não é obrigatório.',
         },
         {
           id: 'capture',
-          title: 'Fotogrametria mobile',
-          body: 'Grave o prato com LiDAR (iPhone Pro) ou apps em nuvem: Polycam, Luma AI ou RealityCapture. Girar 360° em volta do prato.',
-          apps: ['Polycam', 'Luma AI', 'RealityCapture', 'Object Capture (iOS)'],
+          title: 'Escaneie com o celular',
+          body: 'Abra o Polycam, Luma AI ou a câmera 3D do iPhone Pro e rode em volta do prato (~360°). Em 1–2 minutos o app monta o modelo.',
+          apps: ['Polycam', 'Luma AI', 'Object Capture (iPhone)'],
         },
         {
           id: 'export',
-          title: 'Exportar',
-          body: 'Exporte GLB (Android/Web) e USDZ (iOS Quick Look). Alvo: até 10–15 MB, texturas baked.',
+          title: 'Exporte dois arquivos',
+          body: 'No app, exporte GLB (Android/site) e USDZ (iPhone). Se pedir “otimizar”, aceite — o arquivo fica mais leve.',
         },
         {
           id: 'upload',
-          title: 'Upload no painel',
-          body: 'Cole as URLs dos arquivos (ou caminhos /models/...) e ajuste scaleFactor / lightingPreset.',
+          title: 'Envie neste painel',
+          body: 'Na etapa “Modelo 3D”, toque em escolher arquivo e mande o .glb e o .usdz. Pronto — sem colar links.',
         },
         {
           id: 'future',
-          title: 'Visão de futuro',
-          body: 'Arquitetura pronta para NeRFs / Gaussian Splatting quando forem viáveis em browsers móveis.',
+          title: 'Depois',
+          body: 'No futuro o sistema poderá aceitar scans ainda mais realistas (NeRF / Gaussian Splatting). Por enquanto GLB + USDZ bastam.',
         },
       ],
       constraints: [
-        'Max ~10–15 MB por modelo',
-        'Texturas assadas (baked)',
-        'Fallback 2D obrigatório se AR falhar',
-        'Iluminação HDRI neutra/warm para evitar “comida de plástico”',
+        'Prefira modelos até cerca de 15 MB',
+        'Sempre cadastre também uma foto 2D',
+        'Se o AR falhar, o cliente ainda pede pela foto',
       ],
     };
   }

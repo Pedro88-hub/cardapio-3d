@@ -12,3 +12,5 @@ apps/api/.claude
 apps/api/.agents
 apps/api/.cursor
 apps/api/.devin
+apps/web/public/uploads/**
+!apps/web/public/uploads/.gitkeep
