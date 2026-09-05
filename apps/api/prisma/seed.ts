@@ -126,7 +126,7 @@ async function main() {
                     create: {
                       glbUrl: BURGER_GLB,
                       usdzUrl: BURGER_USDZ,
-                      scaleFactor: 0.95,
+                      scaleFactor: 1,
                       lightingPreset: 'neutral',
                     },
                   },
@@ -183,7 +183,7 @@ async function main() {
                     create: {
                       glbUrl: DESSERT_GLB,
                       usdzUrl: DESSERT_USDZ,
-                      scaleFactor: 0.5,
+                      scaleFactor: 1,
                       lightingPreset: 'warm',
                     },
                   },

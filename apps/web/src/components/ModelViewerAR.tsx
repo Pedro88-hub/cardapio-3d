@@ -8,6 +8,9 @@ type ModelViewerElement = HTMLElement & {
   iosSrc?: string;
   activateAR?: () => Promise<void>;
   canActivateAR?: boolean;
+  scale?: string;
+  updateFraming?: () => void;
+  getDimensions?: () => { x: number; y: number; z: number };
   model?: { scene?: unknown };
 };
 
@@ -32,6 +35,19 @@ function findNode(root: SceneLike | undefined, name: string): SceneLike | null {
     if (obj.name === name) found = obj;
   });
   return found;
+}
+
+function applyRealWorldScale(
+  viewer: ModelViewerElement,
+  scaleFactor: number,
+) {
+  // Modelos já foram reexportados em tamanho real (~prato).
+  // scaleFactor no banco é ajuste fino (1 = tamanho bakeado).
+  const s = Number.isFinite(scaleFactor) && scaleFactor > 0 ? scaleFactor : 1;
+  const value = `${s} ${s} ${s}`;
+  viewer.scale = value;
+  viewer.setAttribute('scale', value);
+  viewer.updateFraming?.();
 }
 
 function applyMeshVisibility(
@@ -141,6 +157,7 @@ export function ModelViewerAR({
     };
 
     const onLoad = () => {
+      applyRealWorldScale(el, asset?.scaleFactor ?? 1);
       setReady(true);
       applyMeshVisibility(el, selected, allOptions);
       refreshAr();
@@ -178,6 +195,7 @@ export function ModelViewerAR({
     item.name,
     item.imageUrl,
     asset?.lightingPreset,
+    asset?.scaleFactor,
     selected,
     allOptions,
   ]);
@@ -268,7 +286,7 @@ export function ModelViewerAR({
           <p className="font-medium text-[var(--ink)]">Como funciona</p>
           <p className="mt-1">
             Toque em <strong>Ver na minha mesa</strong>. A câmera só é pedida
-            nesse momento. Aponte para a mesa até o prato ancorar.
+            nesse momento. O prato aparece em escala real (~tamanho de prato).
           </p>
           <p className="mt-1 text-xs">iPhone: Safari · Android: Chrome</p>
           <button
