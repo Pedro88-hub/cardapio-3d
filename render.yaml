@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: cardapio-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm ci && npx prisma generate --schema apps/api/prisma/schema.prisma && npm run build -w @cardapio/api
+    startCommand: cd apps/api && npx prisma migrate deploy && node dist/main.js
+    healthCheckPath: /restaurants/casa-brasa
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: PORT
+        value: "3001"
+      - key: NODE_VERSION
+        value: "22.12.0"

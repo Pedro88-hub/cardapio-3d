@@ -1,0 +1,16 @@
+{
+  "name": "cardapio-3d",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w @cardapio/web",
+    "dev:api": "npm run start:dev -w @cardapio/api",
+    "dev": "npm run dev:api & npm run dev:web",
+    "build": "npm run build -w @cardapio/api && npm run build -w @cardapio/web",
+    "db:migrate": "npm run prisma:migrate -w @cardapio/api",
+    "db:seed": "npm run prisma:seed -w @cardapio/api",
+    "db:generate": "npm run prisma:generate -w @cardapio/api"
+  }
+}
