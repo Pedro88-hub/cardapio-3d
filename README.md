@@ -2,6 +2,8 @@
 
 Monorepo com Next.js (cliente) + NestJS (API) + PostgreSQL.
 
+**Repositório:** https://github.com/Pedro88-hub/cardapio-3d
+
 ## Subir local
 
 ```bash
@@ -18,6 +20,10 @@ npm run dev:web
 
 Postgres do Docker escuta em **5433** (evita conflito com Postgres local na 5432).
 
-URL demo: http://localhost:3000/r/casa-brasa/mesa/12 (ou a porta que o Next indicar)
+URL demo local: http://localhost:3000/r/casa-brasa/mesa/12
 
 API: http://localhost:3001
+
+## Teste no celular (túnel temporário)
+
+Com a API e o web rodando na máquina, exponha via Cloudflare Tunnel (`cloudflared tunnel --url ...`). O PC precisa permanecer ligado.
