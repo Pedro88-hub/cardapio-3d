@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type ChangeEvent } from 'react';
 import Link from 'next/link';
 import { API_URL } from '@/lib/api';
+import { DishScanner } from '@/components/DishScanner';
 
 type AdminItem = {
   id: string;
@@ -114,6 +115,9 @@ export function AdminPanel({ slug }: { slug: string }) {
   const [usdzUrl, setUsdzUrl] = useState('');
   const [usdzName, setUsdzName] = useState<string | null>(null);
   const [lightingPreset, setLightingPreset] = useState('warm');
+  const [scanReady, setScanReady] = useState(false);
+  const [scanMode, setScanMode] = useState<'ai' | 'demo' | null>(null);
+  const [manualFiles, setManualFiles] = useState(false);
 
   const load = useCallback(async () => {
     const [dash, g] = await Promise.all([
@@ -263,8 +267,8 @@ export function AdminPanel({ slug }: { slug: string }) {
               {data?.name ?? '…'}
             </h1>
             <p className="mt-2 max-w-xl text-[var(--muted)]">
-              Cadastre pratos como no delivery. Para o 3D, basta enviar os
-              arquivos que o app de scan gerar — sem código nem URLs.
+              Cadastre o prato, tire uma foto e o site gera o 3D pela câmera —
+              sem baixar app e sem lidar com arquivos técnicos.
             </p>
           </div>
           <Link
@@ -292,7 +296,7 @@ export function AdminPanel({ slug }: { slug: string }) {
                 }`}
                 style={step === n ? { backgroundColor: accent } : undefined}
               >
-                {n === 1 ? '1. Dados' : n === 2 ? '2. Foto' : '3. Modelo 3D'}
+                {n === 1 ? '1. Dados' : n === 2 ? '2. Foto' : '3. Escanear 3D'}
               </button>
             ))}
           </div>
@@ -406,40 +410,79 @@ export function AdminPanel({ slug }: { slug: string }) {
             {step === 3 ? (
               <>
                 <h2 className="font-[family-name:var(--font-display)] text-2xl">
-                  Modelo 3D (opcional)
+                  Escanear o prato (3D)
                 </h2>
                 <p className="text-sm text-[var(--muted)]">
-                  Use o Polycam, Luma ou a câmera LiDAR do iPhone, exporte os
-                  arquivos e envie abaixo. Não precisa colar link nenhum.
+                  Aponte a câmera para o prato pronto. O site fotografa e monta
+                  o modelo sozinho — você não precisa saber o que é GLB ou USDZ.
                 </p>
 
-                <FileDrop
-                  label="Arquivo para Android e site (.glb)"
-                  hint="É o que a maioria dos apps exporta como “GLB” ou “glTF”."
-                  accept=".glb,model/gltf-binary"
-                  fileName={glbName}
+                <DishScanner
+                  accent={accent}
                   disabled={busy}
-                  onPick={onGlb}
+                  onDone={(result) => {
+                    setGlbUrl(result.glbUrl);
+                    setUsdzUrl(result.usdzUrl || '');
+                    setGlbName('modelo-gerado');
+                    setUsdzName(result.usdzUrl ? 'modelo-gerado-ios' : null);
+                    setScanReady(true);
+                    setScanMode(result.mode);
+                    if (!imageUrl && result.photoUrl) {
+                      setImageUrl(result.photoUrl);
+                      setImageName('foto-do-scan.jpg');
+                    }
+                  }}
                 />
-                <FileDrop
-                  label="Arquivo para iPhone (.usdz)"
-                  hint="No Polycam/Luma, escolha exportar também em USDZ."
-                  accept=".usdz"
-                  fileName={usdzName}
-                  disabled={busy}
-                  onPick={onUsdz}
-                />
+
+                {scanReady ? (
+                  <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+                    {scanMode === 'ai'
+                      ? '3D do seu prato pronto para publicar.'
+                      : 'Prévia 3D pronta (modo demonstração). Com chave de IA no servidor, o modelo será do prato real.'}
+                  </p>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => setManualFiles((v) => !v)}
+                  className="text-sm text-[var(--muted)] underline underline-offset-2"
+                >
+                  {manualFiles
+                    ? 'Ocultar envio manual'
+                    : 'Já tenho arquivos de outro app (avançado)'}
+                </button>
+
+                {manualFiles ? (
+                  <div className="space-y-3">
+                    <FileDrop
+                      label="Arquivo Android/Web"
+                      hint="Somente se você já exportou de outro app."
+                      accept=".glb,model/gltf-binary"
+                      fileName={glbName}
+                      disabled={busy}
+                      onPick={onGlb}
+                    />
+                    <FileDrop
+                      label="Arquivo iPhone"
+                      hint="Somente se você já exportou de outro app."
+                      accept=".usdz"
+                      fileName={usdzName}
+                      disabled={busy}
+                      onPick={onUsdz}
+                    />
+                  </div>
+                ) : null}
 
                 <button
                   type="button"
                   onClick={() => setShowAdvanced((v) => !v)}
                   className="text-sm text-[var(--muted)] underline underline-offset-2"
                 >
-                  {showAdvanced ? 'Ocultar ajustes' : 'Ajustes avançados (opcional)'}
+                  {showAdvanced ? 'Ocultar luz' : 'Tipo de luz do prato (opcional)'}
                 </button>
                 {showAdvanced ? (
                   <label className="block text-sm">
-                    Tipo de luz do prato
+                    Como o prato deve parecer iluminado
                     <select
                       className="mt-1 w-full rounded-xl border border-[var(--border)] bg-white px-3 py-3"
                       value={lightingPreset}
@@ -541,33 +584,29 @@ export function AdminPanel({ slug }: { slug: string }) {
 
         <aside className="space-y-4">
           <h2 className="font-[family-name:var(--font-display)] text-2xl">
-            Como gerar o 3D do prato
+            Como funciona o scan
           </h2>
-          <p className="text-sm text-[var(--muted)]">
-            Não precisa ser técnico. Siga os passos com o celular:
-          </p>
-          <ol className="space-y-3">
-            {(guide?.steps ?? []).map((s, i) => (
-              <li
-                key={s.id}
-                className="rounded-2xl border border-[var(--border)] bg-white/60 p-4"
-              >
-                <p className="text-xs text-[var(--muted)] uppercase">
-                  Passo {i + 1}
-                </p>
-                <h3 className="mt-1 font-medium">{s.title}</h3>
-                <p className="mt-2 text-sm text-[var(--muted)]">{s.body}</p>
-                {s.apps ? (
-                  <p className="mt-2 text-xs">Apps: {s.apps.join(' · ')}</p>
-                ) : null}
-              </li>
-            ))}
+          <ol className="space-y-3 text-sm text-[var(--muted)]">
+            <li className="rounded-2xl border border-[var(--border)] bg-white/60 p-4">
+              <strong className="text-[var(--ink)]">1.</strong> Monte o prato
+              como o cliente receberia.
+            </li>
+            <li className="rounded-2xl border border-[var(--border)] bg-white/60 p-4">
+              <strong className="text-[var(--ink)]">2.</strong> No passo
+              “Escanear 3D”, permita a câmera e fotografe o prato de cima/ângulo
+              claro.
+            </li>
+            <li className="rounded-2xl border border-[var(--border)] bg-white/60 p-4">
+              <strong className="text-[var(--ink)]">3.</strong> O site gera o
+              modelo sozinho e você só clica em publicar.
+            </li>
           </ol>
           <div className="rounded-2xl bg-[#1c1916] p-4 text-sm text-[#f7f1e8]">
-            <p className="font-medium">Dica rápida</p>
+            <p className="font-medium">Modelo real do seu prato</p>
             <p className="mt-2 text-white/75">
-              Se o arquivo passar de ~15 MB, peça ao app para “otimizar” ou
-              “reduzir polígonos” antes de enviar — o celular do cliente agradece.
+              Sem chave de IA, o sistema usa uma prévia 3D só para testar o
+              fluxo. Com <code className="text-white">REPLICATE_API_TOKEN</code>{' '}
+              no servidor, a foto vira o 3D de verdade automaticamente.
             </p>
           </div>
         </aside>
