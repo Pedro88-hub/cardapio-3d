@@ -2,11 +2,12 @@ import { PrismaClient, MeshAction } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-/** Modelos self-hosted em apps/web/public/models (GLB + USDZ para iOS) */
 const BURGER_GLB = '/models/burger.glb';
+const BURGER_USDZ = '/models/burger.usdz';
 const DRINK_GLB = '/models/drink.glb';
 const DRINK_USDZ = '/models/drink.usdz';
 const DESSERT_GLB = '/models/dessert.glb';
+const DESSERT_USDZ = '/models/dessert.usdz';
 
 async function main() {
   await prisma.modifierOption.deleteMany();
@@ -42,7 +43,7 @@ async function main() {
                   asset: {
                     create: {
                       glbUrl: BURGER_GLB,
-                      usdzUrl: null,
+                      usdzUrl: BURGER_USDZ,
                       scaleFactor: 1,
                       lightingPreset: 'warm',
                     },
@@ -124,6 +125,7 @@ async function main() {
                   asset: {
                     create: {
                       glbUrl: BURGER_GLB,
+                      usdzUrl: BURGER_USDZ,
                       scaleFactor: 0.95,
                       lightingPreset: 'neutral',
                     },
@@ -180,6 +182,7 @@ async function main() {
                   asset: {
                     create: {
                       glbUrl: DESSERT_GLB,
+                      usdzUrl: DESSERT_USDZ,
                       scaleFactor: 0.5,
                       lightingPreset: 'warm',
                     },

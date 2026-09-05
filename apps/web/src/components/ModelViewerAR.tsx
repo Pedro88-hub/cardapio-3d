@@ -99,47 +99,68 @@ export function ModelViewerAR({
   }, [glbUrl]);
 
   useEffect(() => {
+    if (!usdzUrl) return;
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'fetch';
+    link.href = usdzUrl;
+    link.crossOrigin = 'anonymous';
+    document.head.appendChild(link);
+    return () => {
+      link.remove();
+    };
+  }, [usdzUrl]);
+
+  useEffect(() => {
     const el = ref.current;
     if (!el || !scriptLoaded || !glbUrl) return;
 
-    // Custom elements need explicit attributes (React booleans are unreliable)
     el.setAttribute('src', glbUrl);
     if (usdzUrl) el.setAttribute('ios-src', usdzUrl);
     else el.removeAttribute('ios-src');
 
     el.setAttribute('alt', item.name);
     el.setAttribute('ar', '');
-    // Native viewers first — more reliable than WebXR on most phones
-    el.setAttribute('ar-modes', 'scene-viewer quick-look webxr');
+    el.setAttribute('ar-modes', 'quick-look scene-viewer webxr');
     el.setAttribute('ar-scale', 'fixed');
     el.setAttribute('ar-placement', 'floor');
     el.setAttribute('camera-controls', '');
     el.setAttribute('touch-action', 'none');
     el.setAttribute('shadow-intensity', '1');
-    el.setAttribute('exposure', asset?.lightingPreset === 'cool' ? '0.9' : '1.05');
+    el.setAttribute(
+      'exposure',
+      asset?.lightingPreset === 'cool' ? '0.9' : '1.05',
+    );
     el.setAttribute('environment-image', 'neutral');
     el.setAttribute('loading', 'eager');
     el.setAttribute('reveal', 'auto');
     if (item.imageUrl) el.setAttribute('poster', item.imageUrl);
 
+    const refreshAr = () => {
+      setArAvailable(Boolean(el.canActivateAR));
+    };
+
     const onLoad = () => {
       setReady(true);
       applyMeshVisibility(el, selected, allOptions);
-      // canActivateAR is populated after AR mode selection
-      window.setTimeout(() => {
-        setArAvailable(Boolean(el.canActivateAR));
-      }, 300);
+      refreshAr();
+      window.setTimeout(refreshAr, 400);
+      window.setTimeout(refreshAr, 1200);
     };
 
     const onArStatus = (event: Event) => {
       const detail = (event as CustomEvent<{ status?: string }>).detail;
+      refreshAr();
       if (detail?.status === 'failed') {
         setArError(
-          'AR indisponível neste aparelho/navegador. Use Chrome no Android ou Safari no iPhone.',
+          'AR indisponível neste aparelho/navegador. Use Safari no iPhone ou Chrome no Android.',
         );
         setArAvailable(false);
       }
-      if (detail?.status === 'not-presenting' || detail?.status === 'session-started') {
+      if (
+        detail?.status === 'not-presenting' ||
+        detail?.status === 'session-started'
+      ) {
         setArError(null);
       }
     };
@@ -150,7 +171,16 @@ export function ModelViewerAR({
       el.removeEventListener('load', onLoad);
       el.removeEventListener('ar-status', onArStatus);
     };
-  }, [scriptLoaded, glbUrl, usdzUrl, item.name, item.imageUrl, asset?.lightingPreset, selected, allOptions]);
+  }, [
+    scriptLoaded,
+    glbUrl,
+    usdzUrl,
+    item.name,
+    item.imageUrl,
+    asset?.lightingPreset,
+    selected,
+    allOptions,
+  ]);
 
   useEffect(() => {
     if (!ready || !ref.current) return;
@@ -168,7 +198,7 @@ export function ModelViewerAR({
       await el.activateAR();
     } catch {
       setArError(
-        'Não foi possível abrir o AR. No Android use Chrome; no iPhone use Safari.',
+        'Não foi possível abrir o AR. No iPhone use Safari; no Android use Chrome.',
       );
     }
   };
@@ -194,14 +224,13 @@ export function ModelViewerAR({
               ['--poster-color' as string]: 'transparent',
             }}
           >
+            {/* Esconde o botão nativo — usamos um CTA único abaixo */}
             <button
               slot="ar-button"
               type="button"
-              className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-full px-5 py-3 text-sm font-semibold text-white shadow-lg"
-              style={{ backgroundColor: accent }}
-            >
-              Ver na minha mesa
-            </button>
+              style={{ display: 'none' }}
+              aria-hidden
+            />
           </model-viewer>
         ) : (
           <div className="flex h-[380px] items-center justify-center text-sm text-white/60">
@@ -224,7 +253,6 @@ export function ModelViewerAR({
         </div>
       </div>
 
-      {/* Botão externo — não fica coberto pelo overlay do viewer */}
       <button
         type="button"
         onClick={launchAr}
@@ -232,19 +260,17 @@ export function ModelViewerAR({
         style={{ backgroundColor: accent }}
         className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold text-white disabled:opacity-50"
       >
-        {ready ? 'Abrir em realidade aumentada' : 'Preparando modelo 3D…'}
+        {ready ? 'Ver na minha mesa' : 'Preparando modelo 3D…'}
       </button>
 
       {showHint ? (
         <div className="rounded-xl border border-[var(--border)] bg-white/60 px-4 py-3 text-sm text-[var(--muted)]">
           <p className="font-medium text-[var(--ink)]">Como funciona</p>
           <p className="mt-1">
-            Toque em <strong>Abrir em realidade aumentada</strong>. A câmera só é
-            pedida nesse momento. Aponte para a mesa até o prato ancorar.
+            Toque em <strong>Ver na minha mesa</strong>. A câmera só é pedida
+            nesse momento. Aponte para a mesa até o prato ancorar.
           </p>
-          <p className="mt-1 text-xs">
-            Android: Chrome · iPhone: Safari
-          </p>
+          <p className="mt-1 text-xs">iPhone: Safari · Android: Chrome</p>
           <button
             type="button"
             onClick={() => setShowHint(false)}
@@ -258,7 +284,13 @@ export function ModelViewerAR({
       {arAvailable === false || arError ? (
         <p className="text-center text-xs text-[var(--muted)]">
           {arError ??
-            'Este aparelho não reportou suporte a AR. Você ainda pode girar o modelo 3D acima e pedir pelo cardápio 2D.'}
+            'Este aparelho não reportou suporte a AR. Você ainda pode girar o modelo 3D acima.'}
+        </p>
+      ) : null}
+
+      {!usdzUrl ? (
+        <p className="text-center text-xs text-amber-800/80">
+          Este item ainda não tem USDZ (iOS). AR pode falhar no iPhone.
         </p>
       ) : null}
     </div>

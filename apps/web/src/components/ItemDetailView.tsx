@@ -111,8 +111,7 @@ export function ItemDetailView({
 
             {item.has3d ? (
               <p className="mt-3 text-center text-xs text-[var(--muted)]">
-                Use o botão laranja para abrir o AR. A câmera só é pedida nesse
-                momento.
+                Toque em <strong>Ver na minha mesa</strong> para abrir o AR.
               </p>
             ) : null}
           </div>
