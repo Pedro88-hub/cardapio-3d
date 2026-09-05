@@ -111,8 +111,8 @@ export function ItemDetailView({
 
             {item.has3d ? (
               <p className="mt-3 text-center text-xs text-[var(--muted)]">
-                Use o botão AR no visualizador (câmera só é pedida nesse momento).
-                Foto com marca d&apos;água: em breve.
+                Use o botão laranja para abrir o AR. A câmera só é pedida nesse
+                momento.
               </p>
             ) : null}
           </div>

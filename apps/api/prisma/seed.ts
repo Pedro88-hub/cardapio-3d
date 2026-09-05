@@ -2,13 +2,11 @@ import { PrismaClient, MeshAction } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-/** Public Khronos sample GLBs — burger-like assembly for demo modifiers */
-const BURGER_GLB =
-  'https://modelviewer.dev/shared-assets/models/glTF-Sample-Assets/Models/MaterialsVariantsShoe/glTF-Binary/MaterialsVariantsShoe.glb';
-const DRINK_GLB =
-  'https://modelviewer.dev/shared-assets/models/Astronaut.glb';
-const DESSERT_GLB =
-  'https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb';
+/** Modelos self-hosted em apps/web/public/models (GLB + USDZ para iOS) */
+const BURGER_GLB = '/models/burger.glb';
+const DRINK_GLB = '/models/drink.glb';
+const DRINK_USDZ = '/models/drink.usdz';
+const DESSERT_GLB = '/models/dessert.glb';
 
 async function main() {
   await prisma.modifierOption.deleteMany();
@@ -149,7 +147,8 @@ async function main() {
                   asset: {
                     create: {
                       glbUrl: DRINK_GLB,
-                      scaleFactor: 0.4,
+                      usdzUrl: DRINK_USDZ,
+                      scaleFactor: 1,
                       lightingPreset: 'cool',
                     },
                   },
